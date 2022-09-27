@@ -13,58 +13,122 @@ Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
 The page will reload when you make changes.\
 You may also see any lint errors in the console.
+# topics-ui
 
-### `npm test`
+## Context
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Our grand Q2 revenue-boosting plan is to build a shiny new dashboard 
+(cloud-hosted, of course) to aggregate curated content from one of our
+internal APIs. This content is divided into topics. For a demo to the 
+president, you've been asked to provide an implementation of a single 
+topic page.
 
-### `npm run build`
+### Task
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Create an application consisting of
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. A single page app (SPA) UI client that displays a table with content for the 
+   topic *'Aggregation'*. The table should display, for each topic member (i.e. 
+   'row'), 
+   the following fields:
+   
+  * The annotation title
+  * The document title
+  * The document jurisdiction
+  * The document tags
+  * The document html content of the html node with id `html-node-id`
+      
+2. A UI server that serves the SPA UI resources, and an API for the SPA 
+   UI for topic data. This means it must interact with the (supplied) internal 
+   API to retrieve content for these endpoints. 
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+See [the Internal API Server Reference section](#internal-api-server-reference) 
+section for how to run the server, and its endpoints and schemata. We would
+advise doing this first, so you can get an idea of what functionality is 
+available to you.
 
-### `npm run eject`
+Additionally, please also document any important design decisions that you've made in a 
+markdown file. A skeleton `DESIGN.md` file has been provided.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+#### Constraints and Assumptions
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+In producing your solution, we expect you to carefully consider the following
+constraints and assumptions: 
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+* In our hypothetical cloud-hosting setup, the internal API server can only be 
+  accessed by services on the same 'network'. For this task, this means the UI 
+  browser client is unable to access the internal API server. 
+  So interactions with the internal API server must go through your server.
+* For a given topic, multiple members may reference the same `document-uuid`
+* Retrieving certain documents from the internal API can be very slow (20 
+  seconds or worse), and the more concurrent requests for the same document, the 
+  slower the API gets. At 5 concurrent requests for a document, requests for that 
+  document will start failing
+* Documents are _immutable_ and uniquely identified by `document-uuid`: 
+  for a given `document-uuid`, the same `html` response will always be returned
+* Topics are _mutable_: Content may be added or removed from topics over time. 
+  In other words, the response of `GET /annotations?topic=<topic>` may vary.
+  Although it might seem that the response is always the same, this cannot be
+  assumed.
+* You may use whatever libraries you wish.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Internal API Server Reference
 
-## Learn More
+The internal API HTTP server can be started on port `8080` by running
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+``` sh
+java -jar internal-api.jar
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+from the project root. Note that this requires _java 11_ to be available 
+on your machine.
 
-### Code Splitting
+For development, the slowness of the documents endpoint of the internal api 
+described in [the constraints and assumptions section](#constraints-and-assumptions) 
+may be inconvenient. The slowness can be disabled by running the server like so:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+``` sh
+INTERNAL_API_SLOW_RESPONSES=false java -jar internal-api.jar
+```
 
-### Analyzing the Bundle Size
+Note that your solution will be judged using the _slow_ server.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+#### Endpoints and schemata
+The available endpoints, their descriptions, and schemata can be viewed at
+[](http://localhost:8080) when the server is running. Additionally, below are 
+some example requests and responses:
 
-### Making a Progressive Web App
+##### `/api/annotations`
+* [request](examples/annotations/request.json)
+* [response](examples/annotations/response.json)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+##### `/api/documents`
+* [request](examples/documents/request.json)
+* [response](examples/documents/response.json)
 
-### Advanced Configuration
+##### `/api/extract-html-node`
+* [request](examples/extract-html-node/request.json)
+* [response](examples/extract-html-node/response.json)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## What we're looking for
+* The app should be relatively performant, and ideally responsive
+* We'd like to understand why you've made the design decisions that you have, 
+  and the tradeoffs involved. In particular, what constraints and assumptions
+  directed your choices? For example, if you chose to execute certain http calls
+  in parallel or in serial, then we'd like to hear why. We'd prefer a partial
+  solution with a comprehensive discussion of what you'd do and why/why not,
+  over a complete solution with scant discussion
+* If you didn't end up implementing everything you wanted to (which is fine,
+  there's always more to do!), we'd be interested to know what those leftover
+  parts are, and how you'd implement them. For example, if you
+  ended up rendering the entire document html for each topic member rather than
+  extracting the individual node, we'd like to hear how you'd go about rendering
+  the single node
+* If you find something unclear, don't be afraid to ask. Part of our day-to-day 
+  involves interacting with stakeholders to clarify requirements, so 
+  inquisitiveness is a virtue.
 
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Submission checklist
+* Instructions for running the project (including any dependency prerequisites)
+* Your UI and server source code
+* Your design decisions markdown file
